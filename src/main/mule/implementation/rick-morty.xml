@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="sf-episodes" doc:id="96579048-03a1-44be-a39c-663b26185137" >
+		<logger level="INFO" doc:name="Logger" doc:id="f0d1bbbf-f934-4413-8a38-a97ce6a89431" message="#['[SAPI] GET /episodes | fetchAll=' ++ (attributes.queryParams.fetchAll default 'false')]" />
+		<choice doc:name="fetchAll?" doc:id="cbd5ddeb-8765-4aa1-a30c-608f76b80a40" >
+			<when expression="#[(attributes.queryParams.fetchAll default 'false') == 'true']" >
+				<http:request method="GET" doc:name="Get episodes page " doc:id="1f98dad4-7325-45ae-b7f8-39b31d941951" config-ref="RickMorty_Request_Config" path="/api/episode" >
+					<http:query-params ><![CDATA[#[{ page: 1 }]]]></http:query-params>
+				</http:request>
+				<set-variable value="#[payload.info]" doc:name="Set Variable" doc:id="b96e1f73-d6b7-427d-a08e-08cd36e5d991" variableName="firstPageInfo" />
+				<set-variable value="#[payload.info.pages]" doc:name="Set Variable1" doc:id="8e8c7d7e-8867-47b2-a7c5-201b0a750d8d" variableName="totalPages" />
+				<set-variable value="#[payload.results]" doc:name="Set Variable2" doc:id="0644c23d-0f66-4ee0-8b92-f482370ac05f" variableName="allResults" />
+				<choice doc:name="More pages?" doc:id="e60ffb05-b3dc-4104-8713-d73e625d6a2f" >
+					<when expression="#[vars.totalPages &gt; 1]" >
+						<foreach doc:name="Loop episodes pages" doc:id="bff70859-47ea-4cf2-9c67-e1186465b53a" collection="#[(2 to vars.totalPages)]" >
+							<set-variable value="#[payload]" doc:name="Set Variable" doc:id="0ea5cd20-ee4b-4e63-b6b6-65e926f33804" variableName="currentPage" />
+							<http:request method="GET" doc:name="Get episodes page N" doc:id="fcca11f3-29ba-45f0-a229-e0a8a963aa8c" config-ref="RickMorty_Request_Config" path="/api/episode" >
+								<http:query-params ><![CDATA[#[{ page: vars.currentPage }]]]></http:query-params>
+							</http:request>
+							<set-variable value="#[vars.allResults ++ payload.results]" doc:name="Set Variable1" doc:id="6c068baf-6556-4c56-a11d-c2a8ef6a75d8" variableName="allResults" />
+						</foreach>
+					</when>
+				</choice>
+				<ee:transform doc:name="Build episodes response" doc:id="02887ff3-d6a4-4734-8931-8effdd8d6dba" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+	info: {
+		count : vars.firstPageInfo.count,
+		pages : vars.firstPageInfo.pages,
+		next  : null,
+		prev  : null
+	},
+	results: vars.allResults
+}
+						]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<http:request method="GET" doc:name="Get episodes single page" doc:id="01276776-fad2-4575-9b62-6012d3939984" config-ref="RickMorty_Request_Config" path="/api/episode" >
+					<http:query-params ><![CDATA[#[{ page: attributes.queryParams.page default 1 }]]]></http:query-params>
+				</http:request>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="sf-locations" doc:id="86003d5b-111b-4c5b-a589-0ebe6ffecdb2" >
+		<logger level="INFO" doc:name="Logger" doc:id="e13aaa7e-d230-426d-8dad-1beb68af9262" message="#['[SAPI] GET /locations | fetchAll=' ++ (attributes.queryParams.fetchAll default 'false')]" />
+		<choice doc:name="fetchAll?" doc:id="7b2b66d5-c49e-4c2d-b38d-f432ce5fb920" >
+			<when expression="#[(attributes.queryParams.fetchAll default 'false') == 'true']" >
+				<http:request method="GET" doc:name="Get locations page " doc:id="ef12c2ea-3eae-4f9a-bd16-2672e3d999fd" config-ref="RickMorty_Request_Config" path="/api/location" >
+					<http:query-params ><![CDATA[#[
+						{
+							page      : 1,
+							"type"      : attributes.queryParams."type"      default '',
+							dimension : attributes.queryParams.dimension default ''
+						} filterObject ((value, key) -> value != '')
+					]]]></http:query-params>
+				</http:request>
+				<set-variable value="#[payload.info]" doc:name="Set Variable" doc:id="9f82e236-edb8-439b-93fb-163dd9cb370b" variableName="firstPageInfo" />
+				<set-variable value="#[payload.info.pages]" doc:name="Set Variable1" doc:id="2eaad305-5e5b-4946-a8a9-332f9d4b443e" variableName="totalPages" />
+				<set-variable value="#[payload.results]" doc:name="Set Variable2" doc:id="99bbaa60-5fc2-43bf-bf22-368310682201" variableName="allResults" />
+				<choice doc:name="More pages?" doc:id="55734027-c501-4012-9aa4-2ad4ab58de2a" >
+					<when expression="#[vars.totalPages &gt; 1]" >
+						<foreach doc:name="Loop locations pages" doc:id="98955c7c-1651-40d0-9b5b-69ab072d033e" collection="#[(2 to vars.totalPages)]" >
+							<set-variable value="#[payload]" doc:name="Set Variable" doc:id="f86f218e-bfa3-4a46-bb71-494447e230f8" variableName="currentPage" />
+							<http:request method="GET" doc:name="Get locations page N" doc:id="957a3933-e4d9-4b51-8878-75536fc9e596" config-ref="RickMorty_Request_Config" path="/api/location" >
+								<http:query-params ><![CDATA[#[
+									{
+										page: vars.currentPage,
+										"type" : attributes.queryParams."type"      default '',
+										dimension : attributes.queryParams.dimension default ''
+									} filterObject ((value, key) -> value != '')
+								]]]></http:query-params>
+							</http:request>
+							<set-variable value="#[vars.allResults ++ payload.results]" doc:name="Set Variable1" doc:id="db8d1ce3-3d4e-443c-a5c1-f1795db21b98" variableName="allResults" />
+						</foreach>
+					</when>
+				</choice>
+				<ee:transform doc:name="Build locations response" doc:id="53d8b381-01dd-4bb9-8b7f-d6cbc46b286f" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+	info: {
+		count : vars.firstPageInfo.count,
+		pages : vars.firstPageInfo.pages,
+		next  : null,
+		prev  : null
+	},
+	results: vars.allResults
+}
+						]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<http:request method="GET" doc:name="Get locations single page" doc:id="555f2283-db31-4345-a659-6ea654881f12" config-ref="RickMorty_Request_Config" path="/api/location" >
+					<http:query-params ><![CDATA[#[
+						{
+							page      : attributes.queryParams.page      default 1,
+							"type"      : attributes.queryParams."type"      default '',
+							dimension : attributes.queryParams.dimension default ''
+						} filterObject ((value, key) -> value != '')
+					]]]></http:query-params>
+				</http:request>
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<sub-flow name="sf-charaters" doc:id="59686358-3dd2-4b50-94e1-58e2aecc6547" >
+		<logger level="INFO" doc:name="Log request" doc:id="f0d6d29c-dfcb-49a0-a57c-0d27f840bed0" message="#['[SAPI] GET /characters | fetchAll=' ++ (attributes.queryParams.fetchAll default 'false') ++ ' | species=' ++ (attributes.queryParams.species default '-')]" />
+		<choice doc:name="fetchAll?" doc:id="7db1e573-a520-4874-81ea-1d39fc2b19eb" >
+			<when expression="#[(attributes.queryParams.fetchAll default 'false') == 'true']" >
+				<http:request method="GET" doc:name="Get page " doc:id="120de9b9-a1e8-4f6f-8bcd-cc9fa862b4b0" config-ref="RickMorty_Request_Config" path="/api/character" >
+					<http:query-params ><![CDATA[#[{
+							page    : 1,
+							species : attributes.queryParams.species default '',
+							status  : attributes.queryParams.status  default '',
+							gender  : attributes.queryParams.gender  default ''
+						} filterObject ((value, key) -> value != '')]]]></http:query-params>
+				</http:request>
+				<set-variable value="#[payload.info]" doc:name="Save info" doc:id="82df955b-acbd-4e7d-8912-c29f8f42d5bd" variableName="firstPageInfo" />
+				<set-variable value="#[payload.info.pages]" doc:name="Save total pages" doc:id="6da955ec-2d71-41cb-8ab2-a1caa57a51cd" variableName="totalPages" />
+				<set-variable value="#[payload.results]" doc:name="Init allResults" doc:id="75d670fd-3fc6-4832-a2c4-41ead782e5a2" variableName="allResults" />
+				<logger level="INFO" doc:name="Logger" doc:id="1f3ba017-551d-4367-b74f-23075561f8a9" message="#['[SAPI] Total pages: ' ++ (vars.totalPages as String) ++ ' | Total items: ' ++ (vars.firstPageInfo.count as String)]" />
+				<choice doc:name="More pages?" doc:id="39c9d70b-9b17-4111-a57d-3910c60f4175" >
+					<when expression="#[vars.totalPages &gt; 1]" >
+						<foreach doc:name="Loop pages 2..N" doc:id="1d999afe-18a7-4230-99ff-0c25bca662f5" collection="#[(2 to vars.totalPages)]" >
+							<set-variable value="#[payload]" doc:name="Current page num" doc:id="dbaf3954-359e-4f1d-ac28-e718525c7f14" variableName="currentPage" />
+							<http:request method="GET" doc:name="Get page N" doc:id="e44e3f72-7632-48a0-828c-d40a2582b731" config-ref="RickMorty_Request_Config" path="/api/character" >
+								<http:query-params ><![CDATA[#[
+									{
+										page    : vars.currentPage,
+										species : attributes.queryParams.species default '',
+										status  : attributes.queryParams.status  default '',
+										gender  : attributes.queryParams.gender  default ''
+									} filterObject ((value, key) -> value != '')
+								]]]></http:query-params>
+							</http:request>
+							<set-variable value="#[vars.allResults ++ payload.results]" doc:name="Accumulate results" doc:id="575cc223-2c30-403b-b386-550896afd1c1" variableName="allResults" />
+						</foreach>
+					</when>
+					<otherwise >
+						<logger level="INFO" doc:name="Logger" doc:id="eb032dc1-3365-4de4-ba74-5e94916018ca" message="[SAPI] Single page - no loop needed" />
+					</otherwise>
+				</choice>
+				<ee:transform doc:name="Build aggregated response" doc:id="ff6c6976-02af-45c7-8516-17c0e5f943b4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[
+%dw 2.0
+output application/json
+---
+{
+	info: {
+		count : vars.firstPageInfo.count,
+		pages : vars.firstPageInfo.pages,
+		next  : null,
+		prev  : null
+	},
+	results: vars.allResults
+}
+						]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<logger level="INFO" doc:name="Logger1" doc:id="4fcc011a-b7c4-4797-abcd-72643f7a3bb0" message="#['[SAPI] fetchAll complete - returned ' ++ (sizeOf(payload.results) as String) ++ ' characters']" />
+			</when>
+			<otherwise >
+				<http:request method="GET" doc:name="Get single page" doc:id="3be21aa5-e1ae-43c9-865e-39878e6fc177" config-ref="RickMorty_Request_Config" path="/api/character" >
+					<http:query-params ><![CDATA[#[{
+							page    : attributes.queryParams.page    default 1,
+							species : attributes.queryParams.species default '',
+							status  : attributes.queryParams.status  default '',
+							gender  : attributes.queryParams.gender  default ''
+						} filterObject ((value, key) -> value != '')]]]></http:query-params>
+				</http:request>
+				<logger level="INFO" doc:name="Logger" doc:id="f57eb799-fe96-4111-a74b-a966ca904208" message="#['[SAPI] Single page - count: ' ++ (payload.info.count as String default '?')]" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>
