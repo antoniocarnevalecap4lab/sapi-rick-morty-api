@@ -9,7 +9,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 		<logger level="INFO" doc:name="Logger" doc:id="f0d1bbbf-f934-4413-8a38-a97ce6a89431" message="#['[SAPI] GET /episodes | fetchAll=' ++ (attributes.queryParams.fetchAll default 'false')]" />
 		<choice doc:name="fetchAll?" doc:id="cbd5ddeb-8765-4aa1-a30c-608f76b80a40" >
 			<when expression="#[(attributes.queryParams.fetchAll default 'false') == 'true']" >
-				<http:request method="GET" doc:name="Get episodes page " doc:id="1f98dad4-7325-45ae-b7f8-39b31d941951" config-ref="RickMorty_Request_Config" path="/api/episode" >
+				<http:request method="GET" doc:name="Get episodes page " doc:id="1f98dad4-7325-45ae-b7f8-39b31d941951" config-ref="RickMorty_Request_Config" path="/api/episode" sendCorrelationId="ALWAYS">
 					<http:query-params ><![CDATA[#[{ page: 1 }]]]></http:query-params>
 				</http:request>
 				<set-variable value="#[payload.info]" doc:name="Set Variable" doc:id="b96e1f73-d6b7-427d-a08e-08cd36e5d991" variableName="firstPageInfo" />
@@ -56,14 +56,12 @@ output application/json
 		<logger level="INFO" doc:name="Logger" doc:id="e13aaa7e-d230-426d-8dad-1beb68af9262" message="#['[SAPI] GET /locations | fetchAll=' ++ (attributes.queryParams.fetchAll default 'false')]" />
 		<choice doc:name="fetchAll?" doc:id="7b2b66d5-c49e-4c2d-b38d-f432ce5fb920" >
 			<when expression="#[(attributes.queryParams.fetchAll default 'false') == 'true']" >
-				<http:request method="GET" doc:name="Get locations page " doc:id="ef12c2ea-3eae-4f9a-bd16-2672e3d999fd" config-ref="RickMorty_Request_Config" path="/api/location" >
-					<http:query-params ><![CDATA[#[
-						{
+				<http:request method="GET" doc:name="Get locations page " doc:id="ef12c2ea-3eae-4f9a-bd16-2672e3d999fd" config-ref="RickMorty_Request_Config" path="/api/location" sendCorrelationId="ALWAYS">
+					<http:query-params ><![CDATA[#[{
 							page      : 1,
 							"type"      : attributes.queryParams."type"      default '',
 							dimension : attributes.queryParams.dimension default ''
-						} filterObject ((value, key) -> value != '')
-					]]]></http:query-params>
+						} filterObject ((value, key) -> value != '')]]]></http:query-params>
 				</http:request>
 				<set-variable value="#[payload.info]" doc:name="Set Variable" doc:id="9f82e236-edb8-439b-93fb-163dd9cb370b" variableName="firstPageInfo" />
 				<set-variable value="#[payload.info.pages]" doc:name="Set Variable1" doc:id="2eaad305-5e5b-4946-a8a9-332f9d4b443e" variableName="totalPages" />

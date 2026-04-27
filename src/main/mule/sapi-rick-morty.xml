@@ -11,15 +11,15 @@
             </http:error-response>
         </http:listener>
         <apikit:router config-ref="sapi-rick-morty-config" />
-		<error-handler ref="globalError_Handler" />
+        <error-handler ref="globalError_Handler" />
     </flow>
     <flow name="get:\characters:sapi-rick-morty-config">
-        <flow-ref doc:name="sf-charaters" doc:id="9510bf2b-8225-4cec-9a75-9b9d5ff0cf1d" name="sf-charaters"/>
+        <flow-ref doc:name="sf-charaters" doc:id="9510bf2b-8225-4cec-9a75-9b9d5ff0cf1d" name="sf-charaters" />
     </flow>
     <flow name="get:\episodes:sapi-rick-morty-config">
-		<flow-ref doc:name="sf-episodes" doc:id="9f6a4129-a7f0-451d-99d1-2cf41244524c" name="sf-episodes"/>
+        <flow-ref doc:name="sf-episodes" doc:id="9f6a4129-a7f0-451d-99d1-2cf41244524c" name="sf-episodes" />
     </flow>
     <flow name="get:\locations:sapi-rick-morty-config">
-		<flow-ref doc:name="sf-episodes" doc:id="8f4d6692-129d-4b07-9f5f-aaa7e88d2973" name="sf-locations"/>
+        <flow-ref doc:name="sf-episodes" doc:id="8f4d6692-129d-4b07-9f5f-aaa7e88d2973" name="sf-locations" />
     </flow>
 </mule>
